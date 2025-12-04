@@ -15,7 +15,8 @@ The repository is organized exactly according to the submission requirements:
 ├── sql/                    <-- Database scripts
 │   └── CP3520_submission_script.sql
 └── docs/                   <-- Documentation and Diagrams
-    └── booking_sequence_diagram.md
+    └── Project_Guide.md
+    └── Sequence_Diagram
 
 
 Front-end Application (project-root/index.html)
