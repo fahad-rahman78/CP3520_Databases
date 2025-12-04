@@ -8,7 +8,7 @@ Repository Structure
 
 The repository is organized exactly according to the submission requirements:
 
-[Project Root]
+[fahad-rahman78]
 ├── project-root/           <-- Front-end source files (Entry point for correction)
 │   ├── index.html          <-- The complete application file (HTML, CSS, JS)
 │   └── README.md           <-- This file
