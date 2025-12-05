@@ -1,0 +1,185 @@
+-- ------------------------------------------------------------------
+-- CP3520 Final Project Submission Script
+--
+-- INSTRUCTIONS: Run this entire script in MySQL (MAMP/Laragon) once.
+-- It creates the database, builds all tables, and populates them.
+-- ------------------------------------------------------------------
+
+-- Create and use the database
+CREATE DATABASE CP3520_Group_6;
+USE CP3520_GROUP_6;
+
+-- ------------------------------------------------------------------
+-- PART 1: DDL (DATABASE SCHEMA)
+-- ------------------------------------------------------------------
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- Clean slate: Drop tables before recreating
+DROP TABLE IF EXISTS Bookings;
+DROP TABLE IF EXISTS Course_Requirements;
+DROP TABLE IF EXISTS Room_Features;
+DROP TABLE IF EXISTS Rooms;
+DROP TABLE IF EXISTS Features;
+DROP TABLE IF EXISTS Courses;
+DROP TABLE IF EXISTS Administrators;
+DROP TABLE IF EXISTS Instructors;
+
+SET FOREIGN_KEY_CHECKS=1;
+
+-- 1. User Tables (Instructors, Admins)
+CREATE TABLE Instructors (
+    InstructorID INT PRIMARY KEY AUTO_INCREMENT,
+    Name VARCHAR(255) NOT NULL,
+    Department VARCHAR(100),
+    ContactInfo VARCHAR(255)
+);
+
+CREATE TABLE Administrators (
+    AdminID INT PRIMARY KEY AUTO_INCREMENT,
+    Name VARCHAR(255) NOT NULL,
+    ContactInfo VARCHAR(255)
+);
+
+-- 2. Asset Tables (Rooms, Courses, Features)
+CREATE TABLE Courses (
+    CourseID INT PRIMARY KEY AUTO_INCREMENT,
+    CourseName VARCHAR(255) NOT NULL,
+    CreditHours INT
+);
+
+CREATE TABLE Features (
+    FeatureID INT PRIMARY KEY AUTO_INCREMENT,
+    FeatureName VARCHAR(100) NOT NULL UNIQUE
+);
+
+CREATE TABLE Rooms (
+    RoomID INT PRIMARY KEY AUTO_INCREMENT,
+    RoomNameOrNumber VARCHAR(50) NOT NULL,
+    Capacity INT NOT NULL,
+    Location VARCHAR(255)
+);
+
+-- 3. Junction Tables (Many-to-Many links)
+CREATE TABLE Room_Features (
+    RoomID INT,
+    FeatureID INT,
+    PRIMARY KEY (RoomID, FeatureID),
+    FOREIGN KEY (RoomID) REFERENCES Rooms(RoomID),
+    FOREIGN KEY (FeatureID) REFERENCES Features(FeatureID)
+);
+
+CREATE TABLE Course_Requirements (
+    CourseID INT,
+    FeatureID INT,
+    PRIMARY KEY (CourseID, FeatureID),
+    FOREIGN KEY (CourseID) REFERENCES Courses(CourseID),
+    FOREIGN KEY (FeatureID) REFERENCES Features(FeatureID)
+);
+
+-- 4. Booking Transaction Table
+CREATE TABLE Bookings (
+    BookingID INT PRIMARY KEY AUTO_INCREMENT,
+    Date DATE NOT NULL,
+    StartTime TIME NOT NULL,
+    EndTime TIME NOT NULL,
+    Status ENUM('Pending', 'Approved', 'Rejected') NOT NULL DEFAULT 'Pending',
+
+    InstructorID INT,
+    RoomID INT,
+    CourseID INT,
+    AdminID INT,
+
+    FOREIGN KEY (InstructorID) REFERENCES Instructors(InstructorID),
+    FOREIGN KEY (RoomID) REFERENCES Rooms(RoomID),
+    FOREIGN KEY (CourseID) REFERENCES Courses(CourseID),
+    FOREIGN KEY (AdminID) REFERENCES Administrators(AdminID),
+
+    -- Conflict Prevention Rules
+    UNIQUE (RoomID, Date, StartTime),
+    UNIQUE (InstructorID, Date, StartTime),
+    CHECK (EndTime > StartTime)
+);
+
+-- ------------------------------------------------------------------
+-- PART 2: DML (SAMPLE DATA) - At least 5 entries where applicable
+-- ------------------------------------------------------------------
+
+-- Safety block to clear existing data before inserting
+SET FOREIGN_KEY_CHECKS = 0;
+TRUNCATE TABLE Bookings;
+TRUNCATE TABLE Course_Requirements;
+TRUNCATE TABLE Room_Features;
+TRUNCATE TABLE Instructors;
+TRUNCATE TABLE Administrators;
+TRUNCATE TABLE Courses;
+TRUNCATE TABLE Features;
+TRUNCATE TABLE Rooms;
+SET FOREIGN_KEY_CHECKS = 1;
+
+-- 1. Instructors (At least 5 entries)
+INSERT INTO Instructors (InstructorID, Name, Department, ContactInfo) VALUES
+(1, 'Dr. Evelyn Reed', 'Computer Science', 'e.reed@institution.edu'),
+(2, 'Prof. Samuel Chen', 'Physics', 's.chen@institution.edu'),
+(3, 'Dr. Maria Garcia', 'History', 'm.garcia@institution.edu'),
+(4, 'Dr. Alex Jones', 'Mathematics', 'a.jones@institution.edu'),
+(5, 'Prof. Lena Khan', 'Biology', 'l.khan@institution.edu');
+
+-- 2. Administrators (At least 5 entries)
+INSERT INTO Administrators (AdminID, Name, ContactInfo) VALUES
+(1, 'Admin Alice', 'alice.admin@institution.edu'),
+(2, 'Admin Bob', 'bob.admin@institution.edu'),
+(3, 'Admin Carol', 'carol.admin@institution.edu'),
+(4, 'Admin David', 'david.admin@institution.edu'),
+(5, 'Admin Eva', 'eva.admin@institution.edu');
+
+-- 3. Courses (At least 5 entries)
+INSERT INTO Courses (CourseID, CourseName, CreditHours) VALUES
+(1, 'CS101: Intro to Programming', 3),
+(2, 'PHYS200: Advanced Physics', 4),
+(3, 'HIST150: World History', 3),
+(4, 'MATH301: Linear Algebra', 4),
+(5, 'BIO105: General Biology Lab', 3);
+
+-- 4. Features (At least 5 entries)
+INSERT INTO Features (FeatureID, FeatureName) VALUES
+(1, 'Projector'),
+(2, 'Whiteboard'),
+(3, 'Zoom-Capable'),
+(4, 'Smartboard'),
+(5, 'Lab Equipment'),
+(6, 'Sound System');
+
+-- 5. Rooms (At least 5 entries)
+INSERT INTO Rooms (RoomID, RoomNameOrNumber, Capacity, Location) VALUES
+(1, 'Room 101', 50, 'Main Hall, 1st Floor'),
+(2, 'Room 102', 30, 'Main Hall, 1st Floor'),
+(3, 'Room 205 (Lab)', 40, 'Science Wing, 2nd Floor'),
+(4, 'Auditorium B', 150, 'West Wing, 1st Floor'),
+(5, 'Room 310', 20, 'Third Floor');
+
+-- 6. Junction Tables Population
+
+-- Room_Features: Link features to rooms
+INSERT INTO Room_Features (RoomID, FeatureID) VALUES
+(1, 1), (1, 2), -- Room 101: Projector, Whiteboard
+(2, 1), (2, 3), -- Room 102: Projector, Zoom
+(3, 1), (3, 5), -- Room 205: Projector, Lab Equipment
+(4, 1), (4, 4), (4, 6), -- Auditorium B: Projector, Smartboard, Sound System
+(5, 1), (5, 6); -- Room 310: Projector, Sound System
+
+-- Course_Requirements: Link features required by courses
+INSERT INTO Course_Requirements (CourseID, FeatureID) VALUES
+(1, 1), (1, 2), -- CS101: Projector, Whiteboard
+(2, 1), (2, 5), -- PHYS200: Projector, Lab Equipment
+(3, 1), -- HIST150: Projector
+(5, 5); -- BIO105: Lab Equipment
+
+-- 7. Bookings (At least 5 entries)
+INSERT INTO Bookings (BookingID, Date, StartTime, EndTime, Status, InstructorID, RoomID, CourseID, AdminID)
+VALUES
+(1, '2025-12-10', '09:00:00', '10:30:00', 'Approved', 1, 1, 1, 1), -- Dr. Reed (CS101) - Approved
+(2, '2025-12-10', '11:00:00', '12:30:00', 'Pending', 2, 3, 2, NULL), -- Prof. Chen (PHYS200) - Pending
+(3, '2025-12-10', '14:00:00', '15:00:00', 'Approved', 3, 2, 3, 2), -- Dr. Garcia (HIST150) - Approved
+(4, '2025-12-11', '10:00:00', '11:30:00', 'Pending', 4, 4, 4, NULL), -- Dr. Jones (MATH301) - Pending
+(5, '2025-12-11', '14:00:00', '15:00:00', 'Rejected', 5, 5, 5, 3); -- Prof. Khan (BIO105) - Rejected
